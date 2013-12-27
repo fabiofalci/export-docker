@@ -1,19 +1,28 @@
 #! /usr/bin/env python3.3
 
-import sys, io
+import sys, io, shutil
 import configparser, os
 
 containers_path = '/var/lib/docker/containers/'
 
 class Container:
-	def __init__(self, container_id):
-		self.container_id = container_id
+	def __init__(self, container_id, container_name):
+		self.id = container_id
+		self.name = container_name
 		self.container_path = containers_path + container_id
 		self.container_config = containers_path + container_id + '/config.lxc'
+		self.rootfs_path = None
+		self.init_rootfs_path = None
 
 	def is_valid_container(self):
+		self.container_name_exists()
 		self.container_folder_exists()
 		self.lxc_rootfs_exists()
+
+	def container_name_exists(self):
+		container_name_exists = os.path.isdir(self.name)
+		if container_name_exists:
+			raise Exception("Container name already exists")
 
 	def container_folder_exists(self):
 		container_exists = os.path.isdir(self.container_path)
@@ -41,23 +50,36 @@ class Container:
 		if not rootfs_exists:
 			raise Exception("Rootfs folder not found")
 
-		self.init_rootfs_path = self.rootfs_path.replace(container_id, container_id + "-init")
+		self.init_rootfs_path = self.rootfs_path.replace(self.id, self.id + "-init")
 		init_rootfs_exists = os.path.isdir(self.init_rootfs_path)
 		print("Init-rootfs exists [{:s}]? {:s}".format(self.init_rootfs_path, str(rootfs_exists)))
 		if not init_rootfs_exists:
 			raise Exception("Init rootfs folder not found")
 
+class Exporter:
+	def __init__(self, container):
+		self.container = container
+
+	def copy(self):
+		os.mkdir(self.container.name, 0o755)
+		self.copyInitRootfs()
+
+	def copyInitRootfs(self):
+		print(self.container.init_rootfs_path)
+		shutil.copytree(self.container.init_rootfs_path, self.container.name + "/rootfs")
 
 print("Exporting docker container to a self-contained runnable lxc container")
 
-if len(sys.argv) != 2:
+if len(sys.argv) != 3:
 	raise Exception("Invalid arguments")
 
 container_id = sys.argv[1]
+container_name = sys.argv[2]
 print("Container id: ", container_id)
+print("Container name: ", container_name)
 
-container = Container(container_id)
-
+container = Container(container_id, container_name)
 container.is_valid_container()
 
-
+exporter = Exporter(container)
+exporter.copy()
