@@ -10,6 +10,7 @@ class Container:
         def __init__(self, container_id, container_name):
                 self.id = container_id
                 self.name = container_name
+                self.short_name = container_id[:12]
                 self.path = containers_path + container_id
                 self.config = containers_path + container_id + '/config.lxc'
                 self.rootfs_path = None
@@ -60,6 +61,7 @@ class Container:
 class Exporter:
         def __init__(self, container):
                 self.container = container
+                self.allowed_mount_config = [ "proc", "sysfs", "devpts", "shm", "/etc/resolv.conf", "/var/lib/docker/init/dockerinit" ]
 
         def copy(self):
                 os.mkdir(self.container.name, 0o755)
@@ -74,8 +76,32 @@ class Exporter:
 
         def copy_config_files(self):
                 print("Copying config files...")
-                shutil.copyfile(self.container.path + "/config.env", self.container.name + "/config.env")
-                shutil.copyfile(self.container.path + "/config.lxc", self.container.name + "/config.lxc")
+                shutil.copyfile(self.container.path + "/config.lxc", self.container.name + "/config.lxc.template1")
+                shutil.copyfile(self.container.path + "/config.env", self.container.name + "/rootfs/.dockerenv")
+                shutil.copyfile(self.container.path + "/hostname", self.container.name + "/rootfs/etc/hostname")
+                shutil.copyfile(self.container.path + "/hosts", self.container.name + "/rootfs/etc/hosts")
+
+                call(["sed", "-i", "s/" + self.container.short_name + "/" + self.container.name + "/g", self.container.name + "/rootfs/etc/hostname"])
+                call(["sed", "-i", "s/" + self.container.short_name + "/" + self.container.name + "/g", self.container.name + "/rootfs/etc/hosts"])
+                call(["sed", "-i", "s," + self.container.rootfs_path + ",{container_path},g", self.container.name + "/config.lxc.template1"])
+
+                with open(self.container.name + "/config.lxc.template", "w") as template:
+                    with open(self.container.name + "/config.lxc.template1", "r") as template1:
+                        for line in template1:
+                            if self.is_allowed_line(line):
+                                template.write(line)
+
+                os.remove(self.container.name + "/config.lxc.template1")
+
+
+        def is_allowed_line(self, line):
+            # FIXME remove blank lines and comments
+            if not line.startswith("lxc.mount.entry"):
+                    return True
+            for row in self.allowed_mount_config:
+                if  line.startswith("lxc.mount.entry = " + row):
+                    return True
+            return False
 
         def create_run_script(self):
                 print("Creating run script...")
