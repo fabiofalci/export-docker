@@ -138,19 +138,23 @@ class Exporter:
     def get_run_script_template(self):
         return 'lxc-start -n {name} -f {name}/config.lxc -- /.dockerinit -g 172.17.42.1 -i 172.17.0.18/16 -- bash'
 
+def main():
+    print('Exporting docker container to a self-contained runnable lxc container')
 
-print('Exporting docker container to a self-contained runnable lxc container')
+    if len(sys.argv) != 3:
+        raise Exception('Invalid arguments')
 
-if len(sys.argv) != 3:
-    raise Exception('Invalid arguments')
+    container_id = sys.argv[1]
+    container_name = sys.argv[2]
+    print('Container id: ', container_id)
+    print('Container name: ', container_name)
 
-container_id = sys.argv[1]
-container_name = sys.argv[2]
-print('Container id: ', container_id)
-print('Container name: ', container_name)
+    container = Container(container_id, container_name)
+    container.is_valid_container()
 
-container = Container(container_id, container_name)
-container.is_valid_container()
+    exporter = Exporter(container)
+    exporter.copy()
 
-exporter = Exporter(container)
-exporter.copy()
+
+if __name__ == '__main__':
+    main()
