@@ -136,7 +136,7 @@ class Exporter:
         os.chmod(self.container.name + '/run.sh', 0o755)
 
     def get_run_script_template(self):
-        return 'lxc-start -n {name} -f {name}/config.lxc -- /.dockerinit -g 172.17.42.1 -i 172.17.0.18/16 -- bash'
+        return 'lxc-start -n {name} -f config.lxc -- /.dockerinit -g 172.17.42.1 -i 172.17.0.18/16 -- bash'
 
 def main():
     print('Exporting docker container to a self-contained runnable lxc container')
