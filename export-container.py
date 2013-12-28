@@ -107,7 +107,7 @@ class Exporter:
              + '/rootfs/etc/hosts'])
 
         call(['sed', '-i', 's,' + self.container.rootfs_path
-             + ',{container_path},g', self.container.name
+             + ',{container_path}/rootfs,g', self.container.name
              + '/config.lxc.template1'])
 
         with open(self.container.name + '/config.lxc.template', 'w') as template:
@@ -136,7 +136,12 @@ class Exporter:
         os.chmod(self.container.name + '/run.sh', 0o755)
 
     def get_run_script_template(self):
-        return 'lxc-start -n {name} -f config.lxc -- /.dockerinit -g 172.17.42.1 -i 172.17.0.18/16 -- bash'
+        return """
+var_path=`pwd`
+cp config.lxc.template config.lxc
+sed -i "s,{container_path},$var_path,g" config.lxc
+lxc-start -n {name} -f config.lxc -- /.dockerinit -g 172.17.42.1 -i 172.17.0.18/16 -- bash
+"""
 
 def main():
     print('Exporting docker container to a self-contained runnable lxc container')
