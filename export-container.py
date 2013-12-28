@@ -131,12 +131,12 @@ class Exporter:
         print('Creating run script...')
         content = self.get_run_script_template().replace('{name}', self.container.name)
         with open(self.container.name + '/run.sh', 'w') as f:
-            f.write('#!/bin/sh\n')
             f.write(content)
         os.chmod(self.container.name + '/run.sh', 0o755)
 
     def get_run_script_template(self):
-        return """
+        return """#!/bin/bash
+
 var_path=`pwd`
 cp config.lxc.template config.lxc
 sed -i "s,{container_path},$var_path,g" config.lxc
