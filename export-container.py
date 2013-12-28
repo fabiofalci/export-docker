@@ -4,9 +4,12 @@ import io
 import shutil
 import configparser
 import os
+import subprocess
 from subprocess import call
 
-containers_path = '/var/lib/docker/containers/'
+docker_path = '/var/lib/docker/'
+docker_init_path = docker_path + "init/"
+containers_path = docker_path + 'containers/'
 
 
 class Container:
@@ -73,14 +76,31 @@ class Exporter:
             'devpts',
             'shm',
             '/etc/resolv.conf',
-            '/var/lib/docker/init/dockerinit',
             ]
 
     def copy(self):
         os.mkdir(self.container.name, 0o755)
         self.copy_init_rootfs()
         self.copy_config_files()
+        self.copy_dockerinit()
         self.create_run_script()
+
+    def copy_dockerinit(self):
+        version = self.get_docker_version()
+        if version == None:
+            raise Exception("Docker version not found")
+
+        shutil.copyfile(docker_init_path + 'dockerinit-' + version,
+                        self.container.name + '/rootfs/.dockerinit')
+
+    def get_docker_version(self):
+        cmd = subprocess.Popen('docker version', shell=True, stdout=subprocess.PIPE)
+        version = None
+        for line in cmd.stdout:
+            line_str = str(line, encoding='utf8')
+            if "Client version:" in line_str:
+                return line_str[16:len(line_str) - 1]
+        return None
 
     def copy_init_rootfs(self):
         print('Copying rootfs...')
