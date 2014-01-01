@@ -16,13 +16,26 @@ containers_path = docker_path + "/containers"
 class Container:
 
     def __init__(self, container_id, container_name):
-        self.id = container_id
+        self.id = self.get_full_id(container_id)
         self.name = container_name
-        self.short_name = container_id[:12]
-        self.path = containers_path + "/" +  container_id
-        self.config = containers_path + "/" +  container_id + "/config.lxc"
+        self.short_name = self.id[:12]
+        self.path = containers_path + "/" + self.id
+        self.config = containers_path + "/" + self.id + "/config.lxc"
         self.rootfs_path = None
         self.init_rootfs_path = None
+
+    def get_full_id(self, container_id):
+        if len(container_id) == 64:
+            return container_id
+        if len(container_id) < 12:
+            raise Exception("Please enter at least 12 container ID characters")
+
+        for container_dir in os.listdir(containers_path):
+            if container_dir.startswith(container_id):
+                print("Full container id ", container_dir)
+                return container_dir
+
+        raise Exception("Container not found")
 
     def is_valid_container(self):
         self.container_name_exists()
