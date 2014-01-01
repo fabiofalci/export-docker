@@ -5,6 +5,7 @@ import shutil
 import configparser
 import os
 import subprocess
+import argparse
 from subprocess import call
 
 docker_path = '/var/lib/docker/'
@@ -166,15 +167,14 @@ lxc-start -n {name} -f config.lxc -- /.dockerinit -g 172.17.42.1 -i 172.17.0.18/
 def main():
     print('Exporting docker container to a self-contained runnable lxc container')
 
-    if len(sys.argv) != 3:
-        raise Exception('Invalid arguments')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('docker_container_id', help="Docker container ID to export")
+    parser.add_argument('new_container_name', help="New container name")
+    args = parser.parse_args()
+    print('Docker container id: ', args.docker_container_id)
+    print('New container name: ', args.new_container_name)
 
-    container_id = sys.argv[1]
-    container_name = sys.argv[2]
-    print('Container id: ', container_id)
-    print('Container name: ', container_name)
-
-    container = Container(container_id, container_name)
+    container = Container(args.docker_container_id, args.new_container_name)
     container.is_valid_container()
 
     exporter = Exporter(container)
