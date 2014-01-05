@@ -153,8 +153,9 @@ class Exporter:
         with open(container.name + "/config.lxc.template", "w") as real_template:
             with open(container.name + "/config.lxc.template1", "r") as template1:
                 for line in template1:
-                    if self.is_allowed_line(line):
-                        real_template.write(line)
+                    if not self.is_allowed_line(line):
+                        real_template.write("#")
+                    real_template.write(line)
 
         os.remove(container.name + "/config.lxc.template1")
 
