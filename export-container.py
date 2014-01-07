@@ -185,7 +185,7 @@ lxc-start -n {name} -f config.lxc -- /.dockerinit -g 172.17.42.1 -i 172.17.0.18/
 """
 
 def main():
-    print("Exporting docker container to a self-contained runnable lxc container")
+    print("Exporting Docker container to a lxc container")
 
     parser = argparse.ArgumentParser()
     parser.add_argument("docker_container_id", help="Docker container ID to export")
