@@ -181,7 +181,11 @@ var_path=`pwd`
 cp config.lxc.template config.lxc
 sed -i "s,{container_path},$var_path,g" config.lxc
 
+mount -t aufs -o br=diff/:base/ none rootfs/
+
 lxc-start -n {name} -f config.lxc -- /.dockerinit -g 172.17.42.1 -i 172.17.0.18/16 -- bash
+
+umount rootfs
 """
 
 def main():
